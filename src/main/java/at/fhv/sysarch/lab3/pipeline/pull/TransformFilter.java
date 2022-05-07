@@ -1,14 +1,13 @@
 package at.fhv.sysarch.lab3.pipeline.pull;
 
 import at.fhv.sysarch.lab3.obj.Face;
-import at.fhv.sysarch.lab3.obj.Model;
 import com.hackoeur.jglm.Mat4;
 
-public class TransformFilter extends PerFaceFilter {
+public class TransformFilter extends Filter<Face, Face> {
 
     private Mat4 transform;
 
-    public TransformFilter(Pipe<Model> input, Mat4 transform) {
+    public TransformFilter(Pipe<Face> input, Mat4 transform) {
         super(input);
         this.transform = transform;
     }
@@ -22,7 +21,13 @@ public class TransformFilter extends PerFaceFilter {
     }
 
     @Override
-    protected Face processFace(Face face) {
+    public boolean hasNext() {
+        return input.hasNext();
+    }
+
+    @Override
+    public Face next() {
+        var face = input.next();
         return new Face(
                 transform.multiply(face.getV1()),
                 transform.multiply(face.getV2()),

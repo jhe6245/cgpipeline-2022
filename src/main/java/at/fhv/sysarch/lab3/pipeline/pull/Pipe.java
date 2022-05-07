@@ -9,7 +9,12 @@ public class Pipe<T> implements Source<T> {
     }
 
     @Override
-    public T pull() {
-        return input.pull();
+    public boolean hasNext() {
+        return input.hasNext();
+    }
+
+    @Override
+    public T next() {
+        return input.next();
     }
 }

@@ -9,9 +9,8 @@ import com.hackoeur.jglm.Matrices;
 import com.hackoeur.jglm.Vec4;
 import javafx.animation.AnimationTimer;
 
-import java.util.function.Function;
-import java.util.function.Supplier;
-import java.util.stream.Stream;
+import java.util.ArrayDeque;
+import java.util.Queue;
 
 public class PullPipelineFactory {
 
@@ -23,10 +22,18 @@ public class PullPipelineFactory {
 
     public static AnimationTimer createPipeline(PipelineData pd) {
 
-        var source = new Source<Model>() {
+        Queue<Face> inputBuffer = new ArrayDeque<>();
+
+        var source = new Source<Face>() {
+
             @Override
-            public Model pull() {
-                return pd.getModel();
+            public boolean hasNext() {
+                return !inputBuffer.isEmpty();
+            }
+
+            @Override
+            public Face next() {
+                return inputBuffer.remove();
             }
         };
 
@@ -45,19 +52,26 @@ public class PullPipelineFactory {
 
         var filterProjTransform = new TransformFilter(new Pipe<>(filterViewTransform), pd.getProjTransform());
 
-        var filterPerspectiveDivision = new PerFaceFilter(new Pipe<>(filterProjTransform)) {
+        var filterPerspectiveDivision = new Filter<Face, Face>(new Pipe<>(filterProjTransform)) {
 
-            Vec4 div(Vec4 v) {
-                return v.multiply(1 / v.getZ());
+            @Override
+            public boolean hasNext() {
+                return input.hasNext();
             }
 
             @Override
-            protected Face processFace(Face face) {
+            public Face next() {
+                var face = input.next();
                 return new Face(
                         div(face.getV1()), div(face.getV2()), div(face.getV3()),
                         div(face.getN1()), div(face.getN2()), div(face.getN3())
                 );
             }
+
+            Vec4 div(Vec4 v) {
+                return v.multiply(1 / v.getZ());
+            }
+
         };
 
         var filterViewportTransform = new TransformFilter(new Pipe<>(filterPerspectiveDivision), pd.getViewportTransform());
@@ -83,7 +97,9 @@ public class PullPipelineFactory {
                 graphics.setStroke(pd.getModelColor());
                 graphics.setFill(pd.getModelColor());
 
-                filterViewportTransform.pull().getFaces().forEach(f -> {
+                inputBuffer.addAll(model.getFaces());
+
+                filterViewportTransform.forEachRemaining(f -> {
 
                     final int n = 3;
                     var xs = new double[] { f.getV1().getX(), f.getV2().getX(), f.getV3().getX() };
