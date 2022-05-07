@@ -5,9 +5,9 @@ import at.fhv.sysarch.lab3.obj.Model;
 
 import java.util.stream.Collectors;
 
-public abstract class ByFaceFilter extends Filter<Model, Model> {
+public abstract class PerFaceFilter extends Filter<Model, Model> {
 
-    public ByFaceFilter(Pipe<Model> input) {
+    public PerFaceFilter(Pipe<Model> input) {
         super(input);
     }
 

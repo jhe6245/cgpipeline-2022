@@ -4,6 +4,7 @@ import at.fhv.sysarch.lab3.animation.AnimationRenderer;
 import at.fhv.sysarch.lab3.obj.Face;
 import at.fhv.sysarch.lab3.obj.Model;
 import at.fhv.sysarch.lab3.pipeline.pull.*;
+import at.fhv.sysarch.lab3.utils.MatrixUtils;
 import com.hackoeur.jglm.Mat4;
 import com.hackoeur.jglm.Matrices;
 import com.hackoeur.jglm.Vec4;
@@ -13,6 +14,13 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 public class PullPipelineFactory {
+
+    private static Mat4 modelToViewTransform(PipelineData pd, float rotationAngle) {
+        return pd.getModelTranslation()
+                .multiply(pd.getViewTransform())
+                .multiply(Matrices.rotate(rotationAngle, pd.getModelRotAxis()));
+    }
+
     public static AnimationTimer createPipeline(PipelineData pd) {
         // TODO: pull from the source (model)
 
@@ -27,7 +35,8 @@ public class PullPipelineFactory {
         };
 
         // TODO 1. perform model-view transformation from model to VIEW SPACE coordinates
-        var applyViewTransform = new TransformFilter(new Pipe<>(source), pd.getViewTransform());
+
+        var filterViewTransform = new TransformFilter(new Pipe<>(source), modelToViewTransform(pd, 0));
 
         // TODO 2. perform backface culling in VIEW SPACE
 
@@ -44,35 +53,25 @@ public class PullPipelineFactory {
             // 5. TODO perform projection transformation
         }
 
+        var filterProjTransform = new TransformFilter(new Pipe<>(filterViewTransform), pd.getProjTransform());
+
         // TODO 6. perform perspective division to screen coordinates
-
-        var applyProjTransform = new TransformFilter(new Pipe<>(applyViewTransform), pd.getProjTransform());
-
-        var applyPerspectiveDivision = new ByFaceFilter(new Pipe<>(applyProjTransform)) {
+        var filterPerspectiveDivision = new PerFaceFilter(new Pipe<>(filterProjTransform)) {
 
             Vec4 div(Vec4 v) {
-                return new Vec4(
-                        v.getX() / v.getW(),
-                        v.getY() / v.getW(),
-                        v.getZ() / v.getW(),
-                        1
-                );
+                return v.multiply(1 / v.getZ());
             }
 
             @Override
             protected Face processFace(Face face) {
                 return new Face(
-                        div(face.getV1()),
-                        div(face.getV2()),
-                        div(face.getV3()),
-                        div(face.getN1()),
-                        div(face.getN2()),
-                        div(face.getN3())
+                        div(face.getV1()), div(face.getV2()), div(face.getV3()),
+                        div(face.getN1()), div(face.getN2()), div(face.getN3())
                 );
             }
         };
 
-        var applyViewportTransform = new TransformFilter(new Pipe<>(applyPerspectiveDivision), pd.getViewportTransform());
+        var filterViewportTransform = new TransformFilter(new Pipe<>(filterPerspectiveDivision), pd.getViewportTransform());
 
         // TODO 7. feed into the sink (renderer)
 
@@ -88,18 +87,11 @@ public class PullPipelineFactory {
              */
             @Override
             protected void render(float fraction, Model model) {
-                // TODO compute rotation in radians
+
                 rotationAngle += fraction;
 
-                // TODO create new model rotation matrix using pd.getModelRotAxis and Matrices.rotate
-                Mat4 rotationMatrix = Matrices.rotate(rotationAngle, pd.getModelRotAxis());
+                filterViewTransform.setTransform(modelToViewTransform(pd, rotationAngle));
 
-                // TODO compute updated model-view transformation
-
-
-                // TODO update model-view filter
-
-                // TODO trigger rendering of the pipeline
 
                 inputModel[0] = model;
 
@@ -107,7 +99,7 @@ public class PullPipelineFactory {
                 graphics.setStroke(pd.getModelColor());
                 graphics.setFill(pd.getModelColor());
 
-                applyViewportTransform.pull().getFaces().forEach(f -> {
+                filterViewportTransform.pull().getFaces().forEach(f -> {
 
                     Supplier<Stream<Vec4>> vertices = () -> Stream.of(f.getV1(), f.getV2(), f.getV3());
                     var xs = vertices.get().mapToDouble(Vec4::getX).toArray();
