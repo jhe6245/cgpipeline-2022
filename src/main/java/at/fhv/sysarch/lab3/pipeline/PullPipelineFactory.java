@@ -3,11 +3,13 @@ package at.fhv.sysarch.lab3.pipeline;
 import at.fhv.sysarch.lab3.animation.AnimationRenderer;
 import at.fhv.sysarch.lab3.obj.Face;
 import at.fhv.sysarch.lab3.obj.Model;
+import at.fhv.sysarch.lab3.pipeline.data.Pair;
 import at.fhv.sysarch.lab3.pipeline.pull.*;
 import com.hackoeur.jglm.Mat4;
 import com.hackoeur.jglm.Matrices;
 import com.hackoeur.jglm.Vec4;
 import javafx.animation.AnimationTimer;
+import javafx.scene.paint.Color;
 
 import java.util.ArrayDeque;
 import java.util.Queue;
@@ -37,7 +39,8 @@ public class PullPipelineFactory {
             }
         };
 
-        var filterViewTransform = new TransformFilter(new Pipe<>(source), modelSpaceToViewSpace(pd, 0));
+        var filterViewTransform = new FaceTransformFilter(new Pipe<>(source), modelSpaceToViewSpace(pd, 0));
+
 
         // TODO 2. perform backface culling in VIEW SPACE
 
@@ -45,36 +48,38 @@ public class PullPipelineFactory {
 
         // TODO 4. add coloring (space unimportant)
 
+
+
+        var addColor = new Filter<Face, Pair<Face, Color>>(new Pipe<>(filterViewTransform)) {
+            @Override
+            public Pair<Face, Color> next() {
+                return new Pair<>(input.next(), pd.getModelColor());
+            }
+        };
+
         // lighting can be switched on/off
         if (pd.isPerformLighting()) {
             // 4a. TODO perform lighting in VIEW SPACE
         }
+        var filterProjTransform = new FaceColorPairTransformFilter(new Pipe<>(addColor), pd.getProjTransform());
 
-        var filterProjTransform = new TransformFilter(new Pipe<>(filterViewTransform), pd.getProjTransform());
-
-        var filterPerspectiveDivision = new Filter<Face, Face>(new Pipe<>(filterProjTransform)) {
-
+        var filterPerspectiveDivision = new Filter<Pair<Face, Color>, Pair<Face, Color>>(new Pipe<>(filterProjTransform)) {
             @Override
-            public boolean hasNext() {
-                return input.hasNext();
+            public Pair<Face, Color> next() {
+                var n = input.next();
+                var f = n.fst();
+                return new Pair<>(new Face(
+                        div(f.getV1()), div(f.getV2()), div(f.getV3()),
+                        div(f.getN1()), div(f.getN2()), div(f.getN3())
+                ),n.snd());
             }
 
-            @Override
-            public Face next() {
-                var face = input.next();
-                return new Face(
-                        div(face.getV1()), div(face.getV2()), div(face.getV3()),
-                        div(face.getN1()), div(face.getN2()), div(face.getN3())
-                );
+            private Vec4 div(Vec4 v) {
+                return v.multiply(1 / v.getW());
             }
-
-            Vec4 div(Vec4 v) {
-                return v.multiply(1 / v.getZ());
-            }
-
         };
 
-        var filterViewportTransform = new TransformFilter(new Pipe<>(filterPerspectiveDivision), pd.getViewportTransform());
+        var filterViewportTransform = new FaceColorPairTransformFilter(new Pipe<>(filterPerspectiveDivision), pd.getViewportTransform());
 
         // returning an animation renderer which handles clearing of the
         // viewport and computation of the fraction
@@ -94,12 +99,16 @@ public class PullPipelineFactory {
                 filterViewTransform.setTransform(modelSpaceToViewSpace(pd, rotationAngle));
 
                 var graphics = pd.getGraphicsContext();
-                graphics.setStroke(pd.getModelColor());
-                graphics.setFill(pd.getModelColor());
+
 
                 inputBuffer.addAll(model.getFaces());
 
-                filterViewportTransform.forEachRemaining(f -> {
+                filterViewportTransform.forEachRemaining(p -> {
+
+                    var f = p.fst();
+
+                    graphics.setStroke(p.snd());
+                    graphics.setFill(p.snd());
 
                     final int n = 3;
                     var xs = new double[] { f.getV1().getX(), f.getV2().getX(), f.getV3().getX() };

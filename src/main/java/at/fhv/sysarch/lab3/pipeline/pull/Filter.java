@@ -7,4 +7,9 @@ public abstract class Filter<Tin, Tout> implements Source<Tout> {
     public Filter(Pipe<Tin> input) {
         this.input = input;
     }
+
+    @Override
+    public boolean hasNext() {
+        return input.hasNext();
+    }
 }

@@ -3,11 +3,11 @@ package at.fhv.sysarch.lab3.pipeline.pull;
 import at.fhv.sysarch.lab3.obj.Face;
 import com.hackoeur.jglm.Mat4;
 
-public class TransformFilter extends Filter<Face, Face> {
+public abstract class TransformFilter<Tin, Tout> extends Filter<Tin, Tout> {
 
     private Mat4 transform;
 
-    public TransformFilter(Pipe<Face> input, Mat4 transform) {
+    public TransformFilter(Pipe<Tin> input, Mat4 transform) {
         super(input);
         this.transform = transform;
     }
@@ -20,14 +20,7 @@ public class TransformFilter extends Filter<Face, Face> {
         this.transform = transform;
     }
 
-    @Override
-    public boolean hasNext() {
-        return input.hasNext();
-    }
-
-    @Override
-    public Face next() {
-        var face = input.next();
+    protected Face transformFace(Face face) {
         return new Face(
                 transform.multiply(face.getV1()),
                 transform.multiply(face.getV2()),
