@@ -7,7 +7,6 @@ import at.fhv.sysarch.lab3.pipeline.data.Pair;
 import at.fhv.sysarch.lab3.pipeline.pull.*;
 import com.hackoeur.jglm.Mat4;
 import com.hackoeur.jglm.Matrices;
-import com.hackoeur.jglm.Vec4;
 import javafx.animation.AnimationTimer;
 import javafx.scene.paint.Color;
 
@@ -46,10 +45,6 @@ public class PullPipelineFactory {
 
         // TODO 3. perform depth sorting in VIEW SPACE
 
-        // TODO 4. add coloring (space unimportant)
-
-
-
         var addColor = new Filter<Face, Pair<Face, Color>>(new Pipe<>(filterViewTransform)) {
             @Override
             public Pair<Face, Color> next() {
@@ -67,22 +62,12 @@ public class PullPipelineFactory {
             @Override
             public Pair<Face, Color> next() {
                 var n = input.next();
-                var f = n.fst();
-                return new Pair<>(new Face(
-                        div(f.getV1()), div(f.getV2()), div(f.getV3()),
-                        div(f.getN1()), div(f.getN2()), div(f.getN3())
-                ),n.snd());
-            }
-
-            private Vec4 div(Vec4 v) {
-                return v.multiply(1 / v.getW());
+                return new Pair<>(Util.perspectiveDivision(n.fst()),n.snd());
             }
         };
 
         var filterViewportTransform = new FaceColorPairTransformFilter(new Pipe<>(filterPerspectiveDivision), pd.getViewportTransform());
 
-        // returning an animation renderer which handles clearing of the
-        // viewport and computation of the fraction
         return new AnimationRenderer(pd) {
             private float rotationAngle = 0;
 
@@ -99,7 +84,6 @@ public class PullPipelineFactory {
                 filterViewTransform.setTransform(modelSpaceToViewSpace(pd, rotationAngle));
 
                 var graphics = pd.getGraphicsContext();
-
 
                 inputBuffer.addAll(model.getFaces());
 
