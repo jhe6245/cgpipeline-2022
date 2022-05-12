@@ -31,4 +31,8 @@ public class Util {
         );
     }
 
+    public static boolean isBackface(Face f) {
+        return f.getV1().dot(f.getN1()) > 0;
+    }
+
 }

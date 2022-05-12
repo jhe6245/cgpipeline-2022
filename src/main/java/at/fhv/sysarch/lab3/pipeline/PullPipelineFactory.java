@@ -11,6 +11,7 @@ import javafx.animation.AnimationTimer;
 import javafx.scene.paint.Color;
 
 import java.util.ArrayDeque;
+import java.util.NoSuchElementException;
 import java.util.Queue;
 
 public class PullPipelineFactory {
@@ -42,10 +43,46 @@ public class PullPipelineFactory {
 
 
         // TODO 2. perform backface culling in VIEW SPACE
+        var filterBackfaceCulling = new Filter<Face, Face>(new Pipe<>(filterViewTransform)) {
+
+            Face f;
+
+            @Override
+            public Face next() {
+                if(f != null) {
+                    try { return f; }
+                    finally { f = null; }
+                }
+
+                while(input.hasNext()) {
+                    var i = input.next();
+                    if(!Util.isBackface(i)) {
+                        return i;
+                    }
+                }
+
+                throw new NoSuchElementException();
+            }
+
+            @Override
+            public boolean hasNext() {
+                if(f != null)
+                    return true;
+
+                while(input.hasNext()) {
+                    var i = input.next();
+                    if(!Util.isBackface(i)) {
+                        f = i;
+                        return true;
+                    }
+                }
+                return false;
+            }
+        };
 
         // TODO 3. perform depth sorting in VIEW SPACE
 
-        var addColor = new Filter<Face, Pair<Face, Color>>(new Pipe<>(filterViewTransform)) {
+        var addColor = new Filter<Face, Pair<Face, Color>>(new Pipe<>(filterBackfaceCulling)) {
             @Override
             public Pair<Face, Color> next() {
                 return new Pair<>(input.next(), pd.getModelColor());
