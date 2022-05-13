@@ -7,12 +7,12 @@ import at.fhv.sysarch.lab3.pipeline.data.Pair;
 import at.fhv.sysarch.lab3.pipeline.pull.*;
 import com.hackoeur.jglm.Mat4;
 import com.hackoeur.jglm.Matrices;
+import com.sun.javafx.collections.ObservableListWrapper;
 import javafx.animation.AnimationTimer;
+import javafx.collections.transformation.SortedList;
 import javafx.scene.paint.Color;
 
-import java.util.ArrayDeque;
-import java.util.NoSuchElementException;
-import java.util.Queue;
+import java.util.*;
 
 public class PullPipelineFactory {
 
@@ -42,7 +42,6 @@ public class PullPipelineFactory {
         var filterViewTransform = new FaceTransformFilter(new Pipe<>(source), modelSpaceToViewSpace(pd, 0));
 
 
-        // TODO 2. perform backface culling in VIEW SPACE
         var filterBackfaceCulling = new Filter<Face, Face>(new Pipe<>(filterViewTransform)) {
 
             Face f;
@@ -80,20 +79,51 @@ public class PullPipelineFactory {
             }
         };
 
-        // TODO 3. perform depth sorting in VIEW SPACE
+        var filterPaintersAlgorithm = new Filter<Face, Face>(new Pipe<>(filterBackfaceCulling)) {
+            final Queue<Face> faces = new PriorityQueue<>(
+                    Comparator.comparing(f -> f.getV1().getZ())
+            );
 
-        var addColor = new Filter<Face, Pair<Face, Color>>(new Pipe<>(filterBackfaceCulling)) {
+            @Override
+            public Face next() {
+                input.forEachRemaining(faces::add);
+
+                return faces.remove();
+            }
+
+            @Override
+            public boolean hasNext() {
+                input.forEachRemaining(faces::add);
+
+                return !faces.isEmpty();
+            }
+        };
+
+        var addColor = new Filter<Face, Pair<Face, Color>>(new Pipe<>(filterPaintersAlgorithm)) {
             @Override
             public Pair<Face, Color> next() {
                 return new Pair<>(input.next(), pd.getModelColor());
             }
         };
 
+        Pipe<Pair<Face, Color>> pipeLighting = new Pipe<>(addColor);
+
         // lighting can be switched on/off
         if (pd.isPerformLighting()) {
-            // 4a. TODO perform lighting in VIEW SPACE
+            pipeLighting = new Pipe<>(new Filter<>(pipeLighting) {
+                @Override
+                public Pair<Face, Color> next() {
+                    var i = input.next();
+                    var f = i.fst();
+                    var c = i.snd();
+                    var alpha = f.getN1().toVec3().getUnitVector().dot(pd.getLightPos().getUnitVector());
+                    alpha = Math.max(0, alpha);
+                    return new Pair<>(f, Color.BLACK.interpolate(c, alpha));
+                }
+            });
         }
-        var filterProjTransform = new FaceColorPairTransformFilter(new Pipe<>(addColor), pd.getProjTransform());
+
+        var filterProjTransform = new FaceColorPairTransformFilter(pipeLighting, pd.getProjTransform());
 
         var filterPerspectiveDivision = new Filter<Pair<Face, Color>, Pair<Face, Color>>(new Pipe<>(filterProjTransform)) {
             @Override
@@ -147,6 +177,8 @@ public class PullPipelineFactory {
 
                         case FILLED:
                             graphics.fillPolygon(xs, ys, n);
+                            graphics.strokePolygon(xs, ys, n);
+
                             break;
                     }
                 });
