@@ -8,7 +8,6 @@ public abstract class Filter<I, O> implements Sink<I> {
         this.output = output;
     }
 
-    // most filters don't do anything themselves here
     @Override
     public void flush() {
         output.flush();

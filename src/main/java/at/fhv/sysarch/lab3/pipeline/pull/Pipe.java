@@ -1,7 +1,5 @@
 package at.fhv.sysarch.lab3.pipeline.pull;
 
-import java.util.function.Function;
-
 public class Pipe<T> implements Source<T> {
     private final Source<T> input;
 

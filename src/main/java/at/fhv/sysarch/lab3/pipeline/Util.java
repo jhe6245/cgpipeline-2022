@@ -17,23 +17,15 @@ public class Util {
                 .multiply(Matrices.rotate(rotationAngle, pd.getModelRotAxis()));
     }
     
-    public static Face apply(Face face, Mat4 transform) {
+    public static Face apply(Face face, Mat4 t) {
         return new Face(
-                transform.multiply(face.getV1()),
-                transform.multiply(face.getV2()),
-                transform.multiply(face.getV3()),
-                transform.multiply(face.getN1()),
-                transform.multiply(face.getN2()),
-                transform.multiply(face.getN3())
+                t.multiply(face.getV1()), t.multiply(face.getV2()), t.multiply(face.getV3()),
+                t.multiply(face.getN1()), t.multiply(face.getN2()), t.multiply(face.getN3())
         );
     }
 
-    public static Vec4 perspectiveDivision(Vec4 v) {
-        return v.multiply(1 / v.getW());
-    }
-
     private static Vec4 d(Vec4 v) {
-        return perspectiveDivision(v);
+        return v.multiply(1 / v.getW());
     }
 
     public static Face perspectiveDivision(Face f) {

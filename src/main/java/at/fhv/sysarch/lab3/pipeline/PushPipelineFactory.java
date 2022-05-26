@@ -3,16 +3,17 @@ package at.fhv.sysarch.lab3.pipeline;
 import at.fhv.sysarch.lab3.animation.AnimationRenderer;
 import at.fhv.sysarch.lab3.obj.Face;
 import at.fhv.sysarch.lab3.obj.Model;
-import at.fhv.sysarch.lab3.pipeline.data.Pair;
 import at.fhv.sysarch.lab3.pipeline.push.Filter;
 import at.fhv.sysarch.lab3.pipeline.push.Pipe;
+import at.fhv.sysarch.lab3.pipeline.push.Sink;
 import at.fhv.sysarch.lab3.pipeline.push.implementations.*;
 import javafx.animation.AnimationTimer;
+
+import java.util.function.Function;
 
 public class PushPipelineFactory {
 
     public static AnimationTimer createPipeline(PipelineData pd) {
-        // push from the source (model)
 
         var input = new Filter<Model, Face>() {
             @Override
