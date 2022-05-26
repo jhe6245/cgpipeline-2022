@@ -5,11 +5,8 @@ import at.fhv.sysarch.lab3.obj.Face;
 import at.fhv.sysarch.lab3.obj.Model;
 import at.fhv.sysarch.lab3.pipeline.push.Filter;
 import at.fhv.sysarch.lab3.pipeline.push.Pipe;
-import at.fhv.sysarch.lab3.pipeline.push.Sink;
 import at.fhv.sysarch.lab3.pipeline.push.implementations.*;
 import javafx.animation.AnimationTimer;
-
-import java.util.function.Function;
 
 public class PushPipelineFactory {
 
@@ -56,10 +53,8 @@ public class PushPipelineFactory {
         var renderer = new Renderer(pd.getGraphicsContext(), pd.getRenderingMode());
         viewportTransform.setOutput(new Pipe<>(renderer));
 
-        // returning an animation renderer which handles clearing of the
-        // viewport and computation of the praction
         return new AnimationRenderer(pd) {
-            float rotation;
+            private float rotationAngle;
 
             /** This method is called for every frame from the JavaFX Animation
              * system (using an AnimationTimer, see AnimationRenderer). 
@@ -68,11 +63,9 @@ public class PushPipelineFactory {
              */
             @Override
             protected void render(float fraction, Model model) {
-                rotation += fraction;
+                rotationAngle += fraction;
 
-                var r = Util.modelSpaceToViewSpace(pd, rotation);
-
-                modelSpaceToViewSpace.setTransform(r);
+                modelSpaceToViewSpace.setTransform(Util.modelSpaceToViewSpace(pd, rotationAngle));
 
                 input.push(model);
             }

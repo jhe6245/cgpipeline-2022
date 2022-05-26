@@ -69,9 +69,7 @@ public class PullPipelineFactory {
                 viewTransform.setTransform(Util.modelSpaceToViewSpace(pd, rotationAngle));
 
                 inputBuffer.addAll(model.getFaces());
-
                 renderer.renderAll();
-
             }
         };
     }
