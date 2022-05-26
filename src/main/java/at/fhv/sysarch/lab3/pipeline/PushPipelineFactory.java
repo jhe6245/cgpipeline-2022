@@ -37,9 +37,9 @@ public class PushPipelineFactory {
 
         // lighting can be switched on/off
         if (pd.isPerformLighting()) {
-            // perform lighting in VIEW SPACE
             var lighting = new Lighting(pd.getLightPos());
             lighting.setOutput(new Pipe<>(projTransform));
+
             addColor.setOutput(new Pipe<>(lighting));
         } else {
             addColor.setOutput(new Pipe<>(projTransform));
