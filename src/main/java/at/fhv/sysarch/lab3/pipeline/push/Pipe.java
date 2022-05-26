@@ -13,4 +13,9 @@ public class Pipe<T> implements Sink<T> {
     public void push(T item) {
         output.push(item);
     }
+
+    @Override
+    public void flush() {
+        output.flush();
+    }
 }

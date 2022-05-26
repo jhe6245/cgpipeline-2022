@@ -1,13 +1,12 @@
-package at.fhv.sysarch.lab3.pipeline.pull;
+package at.fhv.sysarch.lab3.pipeline.push;
 
 import com.hackoeur.jglm.Mat4;
 
 public abstract class TransformFilter<Tin, Tout> extends Filter<Tin, Tout> {
+    protected Mat4 transform;
 
-    private Mat4 transform;
+    protected TransformFilter(Mat4 transform) {
 
-    public TransformFilter(Pipe<Tin> input, Mat4 transform) {
-        super(input);
         this.transform = transform;
     }
 
@@ -19,4 +18,8 @@ public abstract class TransformFilter<Tin, Tout> extends Filter<Tin, Tout> {
         this.transform = transform;
     }
 
+    @Override
+    public void flush() {
+        output.flush();
+    }
 }

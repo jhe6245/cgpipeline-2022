@@ -1,38 +1,66 @@
 package at.fhv.sysarch.lab3.pipeline;
 
 import at.fhv.sysarch.lab3.animation.AnimationRenderer;
+import at.fhv.sysarch.lab3.obj.Face;
 import at.fhv.sysarch.lab3.obj.Model;
+import at.fhv.sysarch.lab3.pipeline.data.Pair;
+import at.fhv.sysarch.lab3.pipeline.push.Filter;
+import at.fhv.sysarch.lab3.pipeline.push.Pipe;
+import at.fhv.sysarch.lab3.pipeline.push.implementations.*;
 import javafx.animation.AnimationTimer;
+import javafx.scene.paint.Color;
+
 
 public class PushPipelineFactory {
+
     public static AnimationTimer createPipeline(PipelineData pd) {
-        // TODO: push from the source (model)
+        // push from the source (model)
 
-        // TODO 1. perform model-view transformation from model to VIEW SPACE coordinates
+        var input = new Filter<Model, Face>() {
+            @Override
+            public void push(Model item) {
+                output.processAll(item.getFaces());
+            }
+        };
 
-        // TODO 2. perform backface culling in VIEW SPACE
+        var modelSpaceToViewSpace = new FaceTransformFilter(Util.modelSpaceToViewSpace(pd, 0));
+        input.setOutput(new Pipe<>(modelSpaceToViewSpace));
 
-        // TODO 3. perform depth sorting in VIEW SPACE
 
-        // TODO 4. add coloring (space unimportant)
+        var backfaceCulling = new BackfaceCulling();
+        modelSpaceToViewSpace.setOutput(new Pipe<>(backfaceCulling));
+
+        var depthSorting = new DepthSorting();
+        backfaceCulling.setOutput(new Pipe<>(depthSorting));
+
+        var addColor = new AddColor(pd.getModelColor());
+        depthSorting.setOutput(new Pipe<>(addColor));
+
+        var projTransform = new FaceColorPairTransformFilter(pd.getProjTransform());
 
         // lighting can be switched on/off
         if (pd.isPerformLighting()) {
-            // 4a. TODO perform lighting in VIEW SPACE
-            
-            // 5. TODO perform projection transformation on VIEW SPACE coordinates
+            // perform lighting in VIEW SPACE
+            var lighting = new Lighting(pd.getLightPos());
+            lighting.setOutput(new Pipe<>(projTransform));
+            addColor.setOutput(new Pipe<>(lighting));
         } else {
-            // 5. TODO perform projection transformation
+            addColor.setOutput(new Pipe<>(projTransform));
         }
 
-        // TODO 6. perform perspective division to screen coordinates
+        var perspectiveDivision = new PerspectiveDivision();
+        projTransform.setOutput(new Pipe<>(perspectiveDivision));
 
-        // TODO 7. feed into the sink (renderer)
+        var viewportTransform = new FaceColorPairTransformFilter(pd.getViewportTransform());
+        perspectiveDivision.setOutput(new Pipe<>(viewportTransform));
+
+        var renderer = new Renderer(pd.getGraphicsContext(), pd.getRenderingMode());
+        viewportTransform.setOutput(new Pipe<>(renderer));
 
         // returning an animation renderer which handles clearing of the
         // viewport and computation of the praction
         return new AnimationRenderer(pd) {
-            // TODO rotation variable goes in here
+            float rotation;
 
             /** This method is called for every frame from the JavaFX Animation
              * system (using an AnimationTimer, see AnimationRenderer). 
@@ -41,15 +69,13 @@ public class PushPipelineFactory {
              */
             @Override
             protected void render(float fraction, Model model) {
-                // TODO compute rotation in radians
+                rotation += fraction;
 
-                // TODO create new model rotation matrix using pd.modelRotAxis
+                var r = Util.modelSpaceToViewSpace(pd, rotation);
 
-                // TODO compute updated model-view tranformation
+                modelSpaceToViewSpace.setTransform(r);
 
-                // TODO update model-view filter
-
-                // TODO trigger rendering of the pipeline
+                input.push(model);
             }
         };
     }

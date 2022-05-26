@@ -5,28 +5,22 @@ import at.fhv.sysarch.lab3.obj.Face;
 import at.fhv.sysarch.lab3.obj.Model;
 import at.fhv.sysarch.lab3.pipeline.data.Pair;
 import at.fhv.sysarch.lab3.pipeline.pull.*;
-import com.hackoeur.jglm.Mat4;
-import com.hackoeur.jglm.Matrices;
-import com.sun.javafx.collections.ObservableListWrapper;
+import at.fhv.sysarch.lab3.pipeline.pull.implementations.FaceColorPairTransformFilter;
+import at.fhv.sysarch.lab3.pipeline.pull.implementations.FaceTransformFilter;
 import javafx.animation.AnimationTimer;
-import javafx.collections.transformation.SortedList;
 import javafx.scene.paint.Color;
 
 import java.util.*;
 
 public class PullPipelineFactory {
 
-    private static Mat4 modelSpaceToViewSpace(PipelineData pd, float rotationAngle) {
-        return pd.getModelTranslation()
-                .multiply(pd.getViewTransform())
-                .multiply(Matrices.rotate(rotationAngle, pd.getModelRotAxis()));
-    }
+
 
     public static AnimationTimer createPipeline(PipelineData pd) {
 
         Queue<Face> inputBuffer = new ArrayDeque<>();
 
-        var source = new Source<Face>() {
+        var faceSource = new Source<Face>() {
 
             @Override
             public boolean hasNext() {
@@ -39,7 +33,7 @@ public class PullPipelineFactory {
             }
         };
 
-        var filterViewTransform = new FaceTransformFilter(new Pipe<>(source), modelSpaceToViewSpace(pd, 0));
+        var filterViewTransform = new FaceTransformFilter(new Pipe<>(faceSource), Util.modelSpaceToViewSpace(pd, 0));
 
 
         var filterBackfaceCulling = new Filter<Face, Face>(new Pipe<>(filterViewTransform)) {
@@ -55,7 +49,7 @@ public class PullPipelineFactory {
 
                 while(input.hasNext()) {
                     var i = input.next();
-                    if(!Util.isBackface(i)) {
+                    if(Util.facesCamera(i)) {
                         return i;
                     }
                 }
@@ -70,7 +64,7 @@ public class PullPipelineFactory {
 
                 while(input.hasNext()) {
                     var i = input.next();
-                    if(!Util.isBackface(i)) {
+                    if(Util.facesCamera(i)) {
                         f = i;
                         return true;
                     }
@@ -80,9 +74,7 @@ public class PullPipelineFactory {
         };
 
         var filterPaintersAlgorithm = new Filter<Face, Face>(new Pipe<>(filterBackfaceCulling)) {
-            final Queue<Face> faces = new PriorityQueue<>(
-                    Comparator.comparing(f -> f.getV1().getZ())
-            );
+            final Queue<Face> faces = new PriorityQueue<>(Comparator.comparing(Util::averageZ));
 
             @Override
             public Face next() {
@@ -148,7 +140,7 @@ public class PullPipelineFactory {
 
                 rotationAngle += fraction;
 
-                filterViewTransform.setTransform(modelSpaceToViewSpace(pd, rotationAngle));
+                filterViewTransform.setTransform(Util.modelSpaceToViewSpace(pd, rotationAngle));
 
                 var graphics = pd.getGraphicsContext();
 
@@ -178,7 +170,6 @@ public class PullPipelineFactory {
                         case FILLED:
                             graphics.fillPolygon(xs, ys, n);
                             graphics.strokePolygon(xs, ys, n);
-
                             break;
                     }
                 });

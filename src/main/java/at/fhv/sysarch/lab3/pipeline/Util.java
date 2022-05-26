@@ -2,9 +2,21 @@ package at.fhv.sysarch.lab3.pipeline;
 
 import at.fhv.sysarch.lab3.obj.Face;
 import com.hackoeur.jglm.Mat4;
+import com.hackoeur.jglm.Matrices;
 import com.hackoeur.jglm.Vec4;
 
 public class Util {
+
+    public static float averageZ(Face f) {
+        return (f.getV1().getZ() + f.getV2().getZ() + f.getV3().getZ()) / 3;
+    }
+
+    public static Mat4 modelSpaceToViewSpace(PipelineData pd, float rotationAngle) {
+        return pd.getModelTranslation()
+                .multiply(pd.getViewTransform())
+                .multiply(Matrices.rotate(rotationAngle, pd.getModelRotAxis()));
+    }
+    
     public static Face apply(Face face, Mat4 transform) {
         return new Face(
                 transform.multiply(face.getV1()),
@@ -31,7 +43,7 @@ public class Util {
         );
     }
 
-    public static boolean isBackface(Face f) {
+    public static boolean facesCamera(Face f) {
         return f.getV1().dot(f.getN1()) > 0;
     }
 
