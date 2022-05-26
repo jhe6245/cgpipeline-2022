@@ -17,7 +17,8 @@ public class PushPipelineFactory {
         var input = new Filter<Model, Face>() {
             @Override
             public void push(Model item) {
-                output.processAll(item.getFaces());
+                item.getFaces().forEach(output::push);
+                output.flush();
             }
         };
 

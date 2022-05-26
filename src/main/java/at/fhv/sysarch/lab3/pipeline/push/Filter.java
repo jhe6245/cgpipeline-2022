@@ -1,10 +1,10 @@
 package at.fhv.sysarch.lab3.pipeline.push;
 
-public abstract class Filter<Tin, Tout> implements Sink<Tin> {
+public abstract class Filter<I, O> implements Sink<I> {
 
-    protected Pipe<Tout> output;
+    protected Pipe<O> output;
 
-    public void setOutput(Pipe<Tout> output) {
+    public void setOutput(Pipe<O> output) {
         this.output = output;
     }
 

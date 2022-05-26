@@ -1,10 +1,10 @@
 package at.fhv.sysarch.lab3.pipeline.pull;
 
-public abstract class Filter<Tin, Tout> implements Source<Tout> {
+public abstract class Filter<I, O> implements Source<O> {
 
-    protected final Pipe<Tin> input;
+    protected final Pipe<I> input;
 
-    public Filter(Pipe<Tin> input) {
+    public Filter(Pipe<I> input) {
         this.input = input;
     }
 

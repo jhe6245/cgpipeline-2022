@@ -2,7 +2,7 @@ package at.fhv.sysarch.lab3.pipeline.push;
 
 import com.hackoeur.jglm.Mat4;
 
-public abstract class TransformFilter<Tin, Tout> extends Filter<Tin, Tout> {
+public abstract class TransformFilter<I, O> extends Filter<I, O> {
     protected Mat4 transform;
 
     protected TransformFilter(Mat4 transform) {

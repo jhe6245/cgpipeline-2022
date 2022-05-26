@@ -7,9 +7,4 @@ public interface Sink<T> {
      * signals end of stream
      */
     void flush();
-
-    default void processAll(Iterable<T> items) {
-        items.forEach(this::push);
-        flush();
-    }
 }

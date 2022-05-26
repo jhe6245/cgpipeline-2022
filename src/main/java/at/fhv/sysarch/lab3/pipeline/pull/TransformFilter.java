@@ -2,11 +2,11 @@ package at.fhv.sysarch.lab3.pipeline.pull;
 
 import com.hackoeur.jglm.Mat4;
 
-public abstract class TransformFilter<Tin, Tout> extends Filter<Tin, Tout> {
+public abstract class TransformFilter<I, O> extends Filter<I, O> {
 
     private Mat4 transform;
 
-    public TransformFilter(Pipe<Tin> input, Mat4 transform) {
+    public TransformFilter(Pipe<I> input, Mat4 transform) {
         super(input);
         this.transform = transform;
     }
