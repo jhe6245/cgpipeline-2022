@@ -19,8 +19,4 @@ public class Pipe<T> implements Source<T> {
     public T next() {
         return input.next();
     }
-
-    public <TNext> Pipe<TNext> addStage(Function<Pipe<T>, Filter<T, TNext>> filter) {
-        return new Pipe<>(filter.apply(this));
-    }
 }
