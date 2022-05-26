@@ -8,8 +8,6 @@ import at.fhv.sysarch.lab3.pipeline.push.Filter;
 import at.fhv.sysarch.lab3.pipeline.push.Pipe;
 import at.fhv.sysarch.lab3.pipeline.push.implementations.*;
 import javafx.animation.AnimationTimer;
-import javafx.scene.paint.Color;
-
 
 public class PushPipelineFactory {
 
@@ -25,7 +23,6 @@ public class PushPipelineFactory {
 
         var modelSpaceToViewSpace = new FaceTransformFilter(Util.modelSpaceToViewSpace(pd, 0));
         input.setOutput(new Pipe<>(modelSpaceToViewSpace));
-
 
         var backfaceCulling = new BackfaceCulling();
         modelSpaceToViewSpace.setOutput(new Pipe<>(backfaceCulling));

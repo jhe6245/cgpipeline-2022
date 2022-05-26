@@ -44,7 +44,7 @@ public class Util {
     }
 
     public static boolean facesCamera(Face f) {
-        return f.getV1().dot(f.getN1()) > 0;
+        return f.getV1().dot(f.getN1()) < 0;
     }
 
 }
