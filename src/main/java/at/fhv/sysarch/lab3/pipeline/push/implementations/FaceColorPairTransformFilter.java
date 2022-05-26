@@ -3,7 +3,6 @@ package at.fhv.sysarch.lab3.pipeline.push.implementations;
 import at.fhv.sysarch.lab3.obj.Face;
 import at.fhv.sysarch.lab3.pipeline.Util;
 import at.fhv.sysarch.lab3.pipeline.data.Pair;
-import at.fhv.sysarch.lab3.pipeline.push.Pipe;
 import at.fhv.sysarch.lab3.pipeline.push.TransformFilter;
 import com.hackoeur.jglm.Mat4;
 import javafx.scene.paint.Color;

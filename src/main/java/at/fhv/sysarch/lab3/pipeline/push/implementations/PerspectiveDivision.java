@@ -4,7 +4,6 @@ import at.fhv.sysarch.lab3.obj.Face;
 import at.fhv.sysarch.lab3.pipeline.Util;
 import at.fhv.sysarch.lab3.pipeline.data.Pair;
 import at.fhv.sysarch.lab3.pipeline.push.Filter;
-import at.fhv.sysarch.lab3.pipeline.push.Pipe;
 import javafx.scene.paint.Color;
 
 public class PerspectiveDivision extends Filter<Pair<Face, Color>, Pair<Face, Color>> {

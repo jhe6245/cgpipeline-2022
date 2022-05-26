@@ -3,7 +3,6 @@ package at.fhv.sysarch.lab3.pipeline.push.implementations;
 import at.fhv.sysarch.lab3.obj.Face;
 import at.fhv.sysarch.lab3.pipeline.data.Pair;
 import at.fhv.sysarch.lab3.pipeline.push.Filter;
-import at.fhv.sysarch.lab3.pipeline.push.Pipe;
 import javafx.scene.paint.Color;
 
 public class AddColor extends Filter<Face, Pair<Face, Color>> {
